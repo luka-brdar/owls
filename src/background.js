@@ -1,11 +1,8 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import {
-  createProtocol,
-  installVueDevtools
-} from 'vue-cli-plugin-electron-builder/lib'
+import createProtocol from 'vue-cli-plugin-electron-builder/lib/createProtocol'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 app.allowRendererProcessReuse = true
@@ -17,6 +14,15 @@ let win
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
+// Window controls for the frameless window (replaces the removed `remote` module)
+ipcMain.on('window-minimize', (event) => {
+  BrowserWindow.fromWebContents(event.sender).minimize()
+})
+
+ipcMain.on('window-close', (event) => {
+  BrowserWindow.fromWebContents(event.sender).close()
+})
+
 function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({ 
@@ -25,7 +31,8 @@ function createWindow () {
     frame: false,
     resizable: false,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      contextIsolation: false
     } 
   })
 
@@ -73,14 +80,6 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    try {
-      await installVueDevtools()
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
-
-  }
   createWindow()
 })
 

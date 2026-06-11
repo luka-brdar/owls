@@ -123,7 +123,7 @@
 
 <script>
 import WindowControls from '@/components/WindowControls.vue'
-import { remote } from 'electron'
+import { ipcRenderer } from 'electron'
 
 import Fuse from 'fuse.js'
 import system from '../services/system.js'
@@ -182,11 +182,11 @@ export default {
 
   methods: {
     minimizeWindow() {
-      remote.BrowserWindow.getFocusedWindow().minimize()
+      ipcRenderer.send('window-minimize')
     },
 
     closeWindow() {
-      remote.BrowserWindow.getFocusedWindow().close()
+      ipcRenderer.send('window-close')
     },
 
     checkAccess() {
