@@ -33,9 +33,40 @@ You've been warned. On with the show.
 * Use Projects for every hostname you're interested in tracking.
 * Create Environments for your Projects which point at specific IP addresses.
 * Automatic importing of current host files.
+* Manage [Nginx Proxy Manager](https://nginxproxymanager.com/) reverse proxies right from each Project.
 * Cross platform - Windows, macOS and Linux ready.
 * Pretty as fuck.
 * Easy to use, blah blah.
+
+## Nginx Proxy Manager integration
+
+Owls can double as a hub for your [Nginx Proxy Manager](https://nginxproxymanager.com/) (NPM)
+instance, letting you manage reverse proxies alongside your `/etc/hosts` entries.
+
+### Configure the connection
+
+Open the settings (gear icon in the header) and enter:
+
+* **Base URL** – the address of your NPM admin API, e.g. `http://127.0.0.1:81`.
+* **Email** / **Password** – the NPM admin credentials.
+
+Use **Test Connection** to verify Owls can reach and authenticate against NPM. Settings are
+stored locally (via `localStorage`) and are not encrypted, so this is intended for local
+development environments.
+
+### What it manages
+
+Once configured, every Project card gains a **Proxy** row. A proxy is linked to a Project by
+matching the Project's hostname against the proxy host's domain names. From there you can:
+
+* **Add** a proxy host (forwarding scheme/host/port, block common exploits, websockets, caching).
+* **Configure SSL** – select an existing certificate or request a new Let's Encrypt certificate,
+  and toggle Force SSL, HTTP/2, and HSTS.
+* Provide **Advanced** custom Nginx configuration and custom location blocks.
+* **Edit**, **Enable/Disable**, and **Remove** existing proxy hosts.
+
+Proxy management is fully separate from host-file editing: if NPM is unreachable, Owls continues
+to manage `/etc/hosts` as usual and surfaces proxy errors as a dismissible notification.
 
 ## How To Use
 

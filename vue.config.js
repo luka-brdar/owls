@@ -19,6 +19,9 @@ module.exports = {
         appId: 'com.electron.owls',
         productName: 'Owls',
         publish: ['github'],
+        extraResources: [
+          { from: 'proxy-manager', to: 'proxy-manager' }
+        ],
         mac: {
           target: [
             { target: 'dmg', arch: 'universal' },
