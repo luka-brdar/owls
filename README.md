@@ -33,40 +33,44 @@ You've been warned. On with the show.
 * Use Projects for every hostname you're interested in tracking.
 * Create Environments for your Projects which point at specific IP addresses.
 * Automatic importing of current host files.
-* Manage [Nginx Proxy Manager](https://nginxproxymanager.com/) reverse proxies right from each Project.
+* Manage local [nginx](https://nginx.org/) reverse proxies right from each Project.
 * Cross platform - Windows, macOS and Linux ready.
 * Pretty as fuck.
 * Easy to use, blah blah.
 
-## Nginx Proxy Manager integration
+## Reverse proxy management
 
-Owls can double as a hub for your [Nginx Proxy Manager](https://nginxproxymanager.com/) (NPM)
-instance, letting you manage reverse proxies alongside your `/etc/hosts` entries.
+Owls can manage local [nginx](https://nginx.org/) reverse proxies alongside your `/etc/hosts`
+entries. It runs a small `nginx` container via Docker and acts as the control plane itself:
+proxy hosts and certificates are described in a local state file, from which Owls generates the
+nginx configuration and reloads the container. There is no separate admin service to run or log
+into.
 
-### Configure the connection
+### Requirements
 
-Open the settings (gear icon in the header) and enter:
+* [Docker](https://www.docker.com/) or [Colima](https://github.com/abiosoft/colima) installed and
+  running — Owls uses it to run and reload the `nginx` (`devproxy`) container.
+* [mkcert](https://github.com/FiloSottile/mkcert) (optional) — for generating locally-trusted SSL
+  certificates on the fly.
 
-* **Base URL** – the address of your NPM admin API, e.g. `http://127.0.0.1:81`.
-* **Email** / **Password** – the NPM admin credentials.
-
-Use **Test Connection** to verify Owls can reach and authenticate against NPM. Settings are
-stored locally (via `localStorage`) and are not encrypted, so this is intended for local
-development environments.
+The **Proxy** menu in the header shows the container status and lets you start/restart it and
+manage certificates. If Docker isn't available, the reminder banner can be dismissed for good —
+handy if you never use proxies.
 
 ### What it manages
 
-Once configured, every Project card gains a **Proxy** row. A proxy is linked to a Project by
-matching the Project's hostname against the proxy host's domain names. From there you can:
+Every Project card gains a **Proxy** row. A proxy is linked to a Project by matching the Project's
+hostname against the proxy host's domain names. From there you can:
 
 * **Add** a proxy host (forwarding scheme/host/port, block common exploits, websockets, caching).
-* **Configure SSL** – select an existing certificate or request a new Let's Encrypt certificate,
-  and toggle Force SSL, HTTP/2, and HSTS.
-* Provide **Advanced** custom Nginx configuration and custom location blocks.
+* **Configure SSL** – select an existing certificate, or create one right from the proxy dialog by
+  generating a locally-trusted certificate with mkcert or uploading your own, then toggle Force
+  SSL, HTTP/2, and HSTS.
+* Provide **Advanced** custom nginx configuration and custom location blocks.
 * **Edit**, **Enable/Disable**, and **Remove** existing proxy hosts.
 
-Proxy management is fully separate from host-file editing: if NPM is unreachable, Owls continues
-to manage `/etc/hosts` as usual and surfaces proxy errors as a dismissible notification.
+Proxy management is fully separate from host-file editing: if Docker/nginx is unavailable, Owls
+continues to manage `/etc/hosts` as usual and surfaces proxy errors as a dismissible notification.
 
 ## How To Use
 
