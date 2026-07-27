@@ -23,6 +23,14 @@ ipcMain.on('window-close', (event) => {
   BrowserWindow.fromWebContents(event.sender).close()
 })
 
+// Expose writable/bundled paths so the renderer can resolve a data root for the
+// generated nginx configuration (the packaged app bundle is read-only).
+ipcMain.handle('get-app-paths', () => ({
+  userData: app.getPath('userData'),
+  resources: process.resourcesPath || null,
+  isPackaged: app.isPackaged
+}))
+
 function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({ 

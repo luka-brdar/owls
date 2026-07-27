@@ -25,9 +25,9 @@
           </div>
 
           <div class="flex space-x-4 items-center">
-            <!-- Proxy menu: groups all Nginx Proxy Manager controls in one clearly labelled place -->
+            <!-- Proxy menu: groups all proxy controls in one clearly labelled place -->
             <div class="relative app-region-nodrag">
-              <button @click="proxyMenuOpen = !proxyMenuOpen" type="button" title="Nginx Proxy Manager" class="inline-flex items-center py-1 pl-2 pr-1.5 border border-gray-200 text-xs leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+              <button @click="proxyMenuOpen = !proxyMenuOpen" type="button" title="Proxy" class="inline-flex items-center py-1 pl-2 pr-1.5 border border-gray-200 text-xs leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                 <span class="w-2 h-2 rounded-full mr-2" :class="proxyStatusColor"></span>
                 Proxy
                 <svg class="w-4 h-4 ml-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
@@ -37,26 +37,21 @@
               <div v-if="proxyMenuOpen" @click="proxyMenuOpen = false" class="fixed inset-0 z-40"></div>
 
               <!-- Menu -->
-              <div v-if="proxyMenuOpen" class="absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white border border-gray-200 z-50 py-1">
+              <div v-if="proxyMenuOpen" style="width: 15rem" class="absolute right-0 mt-2 rounded-md shadow-lg bg-white border border-gray-200 z-50 py-1">
                 <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Nginx Proxy Manager</span>
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Local nginx proxy</span>
                   <span class="inline-flex items-center text-xs text-gray-500 whitespace-nowrap ml-2">
-                    <span class="w-2 h-2 rounded-full mr-1.5" :class="proxyStatusColor"></span>
+                    <span class="w-2 h-2 rounded-full mr-1" :class="proxyStatusColor"></span>
                     {{ proxyStatusLabel }}
                   </span>
                 </div>
-
-                <button v-if="npmConfigured" @click="proxyMenuOpen = false; openNpmSite()" type="button" class="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4 mr-2 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                  Dashboard
-                </button>
 
                 <button v-if="dockerState === 'ok' || dockerState === 'container-stopped'" @click="proxyMenuOpen = false; restartProxyContainer()" :disabled="restartingContainer" type="button" class="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none disabled:opacity-50">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4 mr-2 text-gray-400" :class="{ 'animate-spin': restartingContainer }"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                   {{ restartingContainer ? 'Restarting...' : 'Restart proxy' }}
                 </button>
 
-                <CertificatesModal v-if="npmConfigured" @saved="loadProxyHosts">
+                <CertificatesModal @saved="loadProxyHosts">
                   <template v-slot="{ on }">
                     <button v-on="on" type="button" class="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none">
                       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4 mr-2 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
@@ -64,17 +59,6 @@
                     </button>
                   </template>
                 </CertificatesModal>
-
-                <div class="my-1 border-t border-gray-100"></div>
-
-                <SettingsModal @saved="loadProxyHosts">
-                  <template v-slot="{ on }">
-                    <button v-on="on" type="button" class="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4 mr-2 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                      Settings
-                    </button>
-                  </template>
-                </SettingsModal>
               </div>
             </div>
 
@@ -92,27 +76,30 @@
       </div>
     </div>
     <!-- Docker status banner -->
-    <div v-if="dockerState !== 'ok' && dockerState !== 'unknown'" class="border-b border-yellow-200 bg-yellow-50 px-4 sm:px-6 lg:px-8 py-3">
+    <div v-if="dockerState !== 'ok' && dockerState !== 'unknown' && !dockerBannerDismissed" class="border-b border-yellow-200 bg-yellow-50 px-4 sm:px-6 lg:px-8 py-3">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div class="flex items-center text-sm text-yellow-800">
           <svg fill="currentColor" viewBox="0 0 20 20" class="w-5 h-5 mr-2 flex-shrink-0"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-          <span v-if="dockerState === 'container-stopped'">Nginx Proxy Manager isn't running.</span>
+          <span v-if="dockerState === 'container-stopped'">The proxy isn't running.</span>
           <span v-else-if="dockerState === 'no-daemon'">The Docker daemon isn't running. Start Docker/Colima and retry.</span>
           <span v-else-if="dockerState === 'not-installed'">Docker isn't installed. Install Docker or Colima to manage the proxy.</span>
         </div>
-        <div class="flex-shrink-0 ml-4">
+        <div class="flex-shrink-0 ml-4 flex items-center space-x-4">
           <button v-if="dockerState === 'container-stopped'" @click="startProxyContainer" :disabled="startingContainer" type="button" class="inline-flex items-center py-1 px-3 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-500 focus:outline-none disabled:opacity-50">
-            {{ startingContainer ? 'Starting...' : 'Start Nginx Proxy Manager' }}
+            {{ startingContainer ? 'Starting...' : 'Start proxy' }}
           </button>
           <button v-else-if="dockerState === 'no-daemon'" @click="refreshDockerStatus" type="button" class="inline-flex items-center py-1 px-3 border border-yellow-400 text-sm leading-5 font-medium rounded-md text-yellow-800 bg-white hover:bg-yellow-100 focus:outline-none">
             Retry
+          </button>
+          <button @click="dismissDockerBanner" type="button" title="Don't show this again" class="text-sm text-yellow-700 hover:text-yellow-900 underline focus:outline-none">
+            Dismiss
           </button>
         </div>
       </div>
     </div>
 
-    <div class="flex h-full min-h-0 overflow-scroll">
-      <div v-if="projects.length !== 0" class="max-w-7xl w-full py-6 sm:px-6 lg:px-8">
+    <div class="flex items-start h-full min-h-0 overflow-scroll">
+      <div v-if="projects.length !== 0" class="max-w-7xl w-full pt-6 sm:px-6 lg:px-8">
         <!-- Domain -->
         <div class="bg-white overflow-hidden shadow rounded-lg mb-6" v-for="project in filteredProjects" :key="project.hostname">
           <div class="border-b border-gray-200 px-4 py-5 sm:px-6">
@@ -151,8 +138,8 @@
             </div>
           </div>
 
-          <!-- Nginx Proxy Manager -->
-          <div v-if="npmConfigured" class="border-t border-gray-200 px-4 py-3 sm:px-6 bg-gray-50">
+          <!-- Proxy status -->
+          <div class="border-t border-gray-200 px-4 py-3 sm:px-6 bg-gray-50">
             <div class="flex items-center justify-between">
               <div class="flex items-center text-sm">
                 <span class="font-medium text-gray-500 mr-3">Proxy</span>
@@ -274,24 +261,23 @@
 
 <script>
 import WindowControls from '@/components/WindowControls.vue'
-import { ipcRenderer, shell } from 'electron'
+import { ipcRenderer } from 'electron'
 
 import Fuse from 'fuse.js'
 import system from '../services/system.js'
-import npm from '../services/npm.js'
+import proxy from '../services/proxy.js'
 import docker from '../services/docker.js'
 
 import Modal from '@/components/Modal.vue'
 import AddEnvironmentModal from '@/components/AddEnvironmentModal.vue'
 import AddProjectModal from '@/components/AddProjectModal.vue'
-import SettingsModal from '@/components/SettingsModal.vue'
 import CertificatesModal from '@/components/CertificatesModal.vue'
 import ProxyHostModal from '@/components/ProxyHostModal.vue'
 
 export default {
   name: 'Home',
   
-  components: { Modal, AddEnvironmentModal, AddProjectModal, SettingsModal, CertificatesModal, ProxyHostModal, WindowControls },
+  components: { Modal, AddEnvironmentModal, AddProjectModal, CertificatesModal, ProxyHostModal, WindowControls },
 
   mounted() {
     if (this.checkAccess()) {
@@ -312,7 +298,6 @@ export default {
       showAddProjectModal: false,
       search: '',
       projects: [],
-      npmConfigured: npm.isConfigured(),
       proxyHosts: [],
       proxyError: '',
       showProxyModal: false,
@@ -322,7 +307,8 @@ export default {
       dockerState: 'unknown',
       startingContainer: false,
       restartingContainer: false,
-      proxyMenuOpen: false
+      proxyMenuOpen: false,
+      dockerBannerDismissed: localStorage.getItem('dockerBannerDismissed') === 'true'
     }
   },
 
@@ -443,15 +429,8 @@ export default {
     },
 
     async loadProxyHosts() {
-      this.npmConfigured = npm.isConfigured()
-
-      if (!this.npmConfigured) {
-        this.proxyHosts = []
-        return
-      }
-
       try {
-        this.proxyHosts = await npm.getProxyHosts()
+        this.proxyHosts = await proxy.getProxyHosts()
       } catch (error) {
         this.proxyHosts = []
         this.proxyError = `Could not load proxy hosts: ${error.message}`
@@ -459,8 +438,8 @@ export default {
     },
 
     proxyForProject(project) {
-      return this.proxyHosts.find(proxy =>
-        Array.isArray(proxy.domain_names) && proxy.domain_names.includes(project.hostname)
+      return this.proxyHosts.find(host =>
+        Array.isArray(host.domain_names) && host.domain_names.includes(project.hostname)
       )
     },
 
@@ -470,12 +449,12 @@ export default {
       this.showProxyModal = true
     },
 
-    async toggleProxy(proxy) {
+    async toggleProxy(host) {
       try {
-        if (proxy.enabled) {
-          await npm.disableProxyHost(proxy.id)
+        if (host.enabled) {
+          await proxy.disableProxyHost(host.id)
         } else {
-          await npm.enableProxyHost(proxy.id)
+          await proxy.enableProxyHost(host.id)
         }
         await this.loadProxyHosts()
       } catch (error) {
@@ -484,13 +463,13 @@ export default {
     },
 
     async confirmRemoveProxy() {
-      const proxy = this.proxyToDelete
-      if (!proxy) {
+      const host = this.proxyToDelete
+      if (!host) {
         return
       }
 
       try {
-        await npm.deleteProxyHost(proxy.id)
+        await proxy.deleteProxyHost(host.id)
         await this.loadProxyHosts()
       } catch (error) {
         this.proxyError = `Could not remove proxy: ${error.message}`
@@ -499,8 +478,9 @@ export default {
       }
     },
 
-    openNpmSite() {
-      shell.openExternal(npm.getConfig().baseUrl)
+    dismissDockerBanner() {
+      this.dockerBannerDismissed = true
+      localStorage.setItem('dockerBannerDismissed', 'true')
     },
 
     async refreshDockerStatus() {
@@ -534,18 +514,11 @@ export default {
 
         await this.refreshDockerStatus()
 
-        // The container is up but NPM needs time to boot before the API on
-        // port 81 accepts connections. Wait for it before loading hosts.
-        if (this.npmConfigured) {
-          const ready = await npm.waitUntilReady()
-          if (ready) {
-            await this.loadProxyHosts()
-          } else {
-            this.proxyError = 'Nginx Proxy Manager started but did not become ready in time. Try refreshing in a moment.'
-          }
-        }
+        // nginx loads the generated configs on boot, so the hosts are ready as
+        // soon as the container is up.
+        await this.loadProxyHosts()
       } catch (error) {
-        this.proxyError = `Could not start Nginx Proxy Manager: ${error.message}`
+        this.proxyError = `Could not start the proxy: ${error.message}`
       } finally {
         this.startingContainer = false
       }
@@ -566,17 +539,9 @@ export default {
 
         await this.refreshDockerStatus()
 
-        // Wait for NPM to come back up before reloading proxy hosts.
-        if (this.npmConfigured) {
-          const ready = await npm.waitUntilReady()
-          if (ready) {
-            await this.loadProxyHosts()
-          } else {
-            this.proxyError = 'Nginx Proxy Manager restarted but did not become ready in time. Try refreshing in a moment.'
-          }
-        }
+        await this.loadProxyHosts()
       } catch (error) {
-        this.proxyError = `Could not restart Nginx Proxy Manager: ${error.message}`
+        this.proxyError = `Could not restart the proxy: ${error.message}`
       } finally {
         this.restartingContainer = false
       }

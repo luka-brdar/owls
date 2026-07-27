@@ -50,7 +50,6 @@
         <div class="flex border-b border-gray-200 mb-4 text-sm">
           <button type="button" @click="mode = 'generate'" :class="tabClass('generate')">Generate (mkcert)</button>
           <button type="button" @click="mode = 'custom'" :class="tabClass('custom')">Custom Upload</button>
-          <button type="button" @click="mode = 'letsencrypt'" :class="tabClass('letsencrypt')">Let's Encrypt</button>
         </div>
 
         <!-- Generate with mkcert -->
@@ -66,11 +65,11 @@
             <label class="block text-gray-700 text-sm mb-1" for="genName">Name (optional)</label>
             <input v-model="form.niceName" id="genName" type="text" class="appearance-none border text-sm rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Defaults to the first hostname">
           </div>
-          <p class="text-xs text-gray-500">A locally-trusted certificate is created with your mkcert CA and uploaded to Nginx Proxy Manager.</p>
+          <p class="text-xs text-gray-500">A locally-trusted certificate is created with your mkcert CA and stored for the proxy to use.</p>
         </div>
 
         <!-- Custom upload -->
-        <div v-else-if="mode === 'custom'">
+        <div v-else><!-- mode === 'custom' -->
           <div class="mb-4">
             <label class="block text-gray-700 text-sm mb-1" for="niceName">Name</label>
             <input v-model="form.niceName" id="niceName" type="text" class="appearance-none border text-sm rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="My Certificate">
@@ -87,21 +86,6 @@
             <label class="block text-gray-700 text-sm mb-1" for="interFile">Intermediate Certificate (optional)</label>
             <input id="interFile" type="file" accept=".pem,.crt,.cert,.cer" @change="onFile($event, 'intermediateCertificate')" class="block w-full text-sm text-gray-700">
           </div>
-        </div>
-
-        <!-- Let's Encrypt -->
-        <div v-else>
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm mb-1" for="leDomains">Domain Names (comma separated)</label>
-            <input v-model="form.domainNames" id="leDomains" type="text" class="appearance-none border text-sm rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm mb-1" for="leEmail">Email</label>
-            <input v-model="form.email" id="leEmail" type="email" class="appearance-none border text-sm rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-          </div>
-          <label class="flex items-center text-sm text-gray-700 mb-2">
-            <input type="checkbox" v-model="form.agree" class="mr-2"> I agree to the Let's Encrypt Terms of Service
-          </label>
         </div>
 
         <p v-if="errorMessage" class="text-red-700 text-sm mt-2">{{ errorMessage }}</p>
@@ -122,15 +106,12 @@
 <script>
 import fs from 'fs'
 import Modal from '@/components/Modal.vue'
-import npm from '../services/npm.js'
+import proxy from '../services/proxy.js'
 import mkcert from '../services/mkcert.js'
 
 function defaultForm() {
   return {
     niceName: '',
-    domainNames: '',
-    email: '',
-    agree: false,
     mkcertHostnames: ''
   }
 }
@@ -181,7 +162,7 @@ export default {
     async loadCertificates() {
       this.loading = true
       try {
-        this.certificates = await npm.getCertificates()
+        this.certificates = await proxy.getCertificates()
       } catch (error) {
         this.errorMessage = error.message || 'Could not load certificates.'
       } finally {
@@ -219,10 +200,8 @@ export default {
       try {
         if (this.mode === 'generate') {
           await this.submitGenerate()
-        } else if (this.mode === 'custom') {
-          await this.submitCustom()
         } else {
-          await this.submitLetsEncrypt()
+          await this.submitCustom()
         }
 
         await this.loadCertificates()
@@ -247,7 +226,7 @@ export default {
       }
 
       const name = this.form.niceName.trim() || hostnames[0]
-      await npm.createCustomCertificate(name, {
+      await proxy.createCustomCertificate(name, {
         certificate: result.certificate,
         certificateKey: result.certificateKey
       })
@@ -269,22 +248,7 @@ export default {
         payload.intermediateCertificate = this.readFile(this.files.intermediateCertificate)
       }
 
-      await npm.createCustomCertificate(this.form.niceName.trim(), payload)
-    },
-
-    async submitLetsEncrypt() {
-      const domainNames = this.parseList(this.form.domainNames)
-      if (domainNames.length === 0) {
-        throw new Error('Please enter at least one domain name.')
-      }
-      if (!this.form.email.trim()) {
-        throw new Error('An email is required for Let\'s Encrypt.')
-      }
-      if (!this.form.agree) {
-        throw new Error('You must agree to the Let\'s Encrypt Terms of Service.')
-      }
-
-      await npm.createLetsEncryptCertificate(domainNames, this.form.email.trim())
+      await proxy.createCustomCertificate(this.form.niceName.trim(), payload)
     },
 
     async handleDelete(cert) {
@@ -294,7 +258,7 @@ export default {
       }
 
       try {
-        await npm.deleteCertificate(cert.id)
+        await proxy.deleteCertificate(cert.id)
         await this.loadCertificates()
         this.$emit('saved')
       } catch (error) {

@@ -24,6 +24,9 @@
           <input v-model="form.ip" class="transition duration-150 appearance-none border text-sm rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="ip" type="text">
         </div>
         <div class="flex items-center justify-end">
+          <button type="button" @click="modal.close()" class="mr-3 inline-flex items-center py-2 px-3 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            Cancel
+          </button>
           <button type="submit" class="relative inline-flex items-center py-2 pl-2 pr-3 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:shadow-outline-indigo focus:border-indigo-700 active:bg-indigo-700">
             Save
           </button>
