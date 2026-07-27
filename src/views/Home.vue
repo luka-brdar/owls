@@ -398,8 +398,19 @@ export default {
       })
     },
 
-    removeProject(project) {
+    async removeProject(project) {
+      const host = this.proxyForProject(project)
+
       this.projects.splice(this.projects.indexOf(project), 1)
+
+      if (host) {
+        try {
+          await proxy.deleteProxyHost(host.id)
+          await this.loadProxyHosts()
+        } catch (error) {
+          this.proxyError = `Could not remove proxy for ${project.hostname}: ${error.message}`
+        }
+      }
     },
 
     deactivateProject(project) {
