@@ -2,8 +2,50 @@
 
 import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import { execSync } from 'child_process'
 import createProtocol from 'vue-cli-plugin-electron-builder/lib/createProtocol'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
+// macOS/Linux GUI apps launched from Finder/Dock inherit a minimal PATH that
+// excludes Homebrew locations where docker/colima live. Prepend the user's real
+// login-shell PATH so child processes (Docker detection) can find the CLIs.
+// The authoritative fix lives in services/docker.js; this is a safeguard so the
+// renderer and any other child processes inherit a sane PATH too.
+function fixPath() {
+  if (process.platform === 'win32') {
+    return
+  }
+  try {
+    const shell = process.env.SHELL || '/bin/zsh'
+    const shellPath = execSync(`${shell} -ilc 'echo -n "$PATH"'`, {
+      encoding: 'utf8',
+      timeout: 5000
+    }).trim()
+
+    const fallbacks = [
+      '/opt/homebrew/bin',
+      '/opt/homebrew/sbin',
+      '/usr/local/bin',
+      '/usr/bin',
+      '/bin',
+      '/usr/sbin',
+      '/sbin'
+    ]
+
+    const parts = [
+      ...(shellPath ? shellPath.split(':') : []),
+      ...fallbacks,
+      ...(process.env.PATH ? process.env.PATH.split(':') : [])
+    ]
+
+    const seen = new Set()
+    process.env.PATH = parts.filter(p => p && !seen.has(p) && seen.add(p)).join(':')
+  } catch (error) {
+    // Leave PATH untouched; services/docker.js still applies its own fallbacks.
+  }
+}
+
+fixPath()
 
 app.allowRendererProcessReuse = true
 

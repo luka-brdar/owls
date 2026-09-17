@@ -1,9 +1,70 @@
-import { exec } from 'child_process'
+import { exec, execSync } from 'child_process'
 import path from 'path'
 import { getComposePath } from './paths.js'
 
 const CONTAINER_NAME = 'devproxy'
 const NETWORK_NAME = 'devproxy-network'
+
+// Common locations for CLIs (docker/docker-compose/colima) that may be missing
+// from the stripped PATH a macOS GUI app inherits when launched from Finder.
+const FALLBACK_PATHS = [
+  '/opt/homebrew/bin',
+  '/opt/homebrew/sbin',
+  '/usr/local/bin',
+  '/usr/bin',
+  '/bin',
+  '/usr/sbin',
+  '/sbin'
+]
+
+let cachedPath = null
+
+/**
+ * Resolve the user's real PATH. GUI-launched macOS apps inherit a minimal PATH
+ * that excludes Homebrew locations where docker/colima live, so we probe the
+ * user's login shell for its PATH and merge in sensible fallbacks. Cached after
+ * the first call.
+ */
+function resolvePath() {
+  if (cachedPath !== null) {
+    return cachedPath
+  }
+
+  const parts = []
+
+  if (process.platform !== 'win32') {
+    try {
+      const shell = process.env.SHELL || '/bin/zsh'
+      const shellPath = execSync(`${shell} -ilc 'echo -n "$PATH"'`, {
+        encoding: 'utf8',
+        timeout: 5000
+      }).trim()
+      if (shellPath) {
+        parts.push(...shellPath.split(':'))
+      }
+    } catch (error) {
+      // Shell probe failed; rely on fallbacks + current PATH below.
+    }
+    parts.push(...FALLBACK_PATHS)
+  }
+
+  if (process.env.PATH) {
+    parts.push(...process.env.PATH.split(path.delimiter))
+  }
+
+  // De-duplicate while preserving order and dropping empties.
+  const seen = new Set()
+  const deduped = []
+  for (const entry of parts) {
+    if (entry && !seen.has(entry)) {
+      seen.add(entry)
+      deduped.push(entry)
+    }
+  }
+
+  cachedPath = deduped.join(path.delimiter)
+  return cachedPath
+}
 
 /**
  * Run a shell command, resolving with { code, stdout, stderr } and never
@@ -11,7 +72,8 @@ const NETWORK_NAME = 'devproxy-network'
  */
 function run(command, options = {}) {
   return new Promise(resolve => {
-    exec(command, { windowsHide: true, ...options }, (error, stdout, stderr) => {
+    const env = { ...process.env, PATH: resolvePath(), ...(options.env || {}) }
+    exec(command, { windowsHide: true, ...options, env }, (error, stdout, stderr) => {
       resolve({
         code: error ? (typeof error.code === 'number' ? error.code : 1) : 0,
         stdout: (stdout || '').trim(),
